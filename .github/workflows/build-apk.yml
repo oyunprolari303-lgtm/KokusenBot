@@ -23,11 +23,11 @@ jobs:
         with:
           bun-version: latest
 
-      # 3. Java ortamını hazırlar (Hata veren v4 sürümü v5'e yükseltildi)
-      - name: Set up JDK 17
+      # 3. Java 21 ortamını hazırlar (Capacitor Android derlemesi Java 21 gerektiriyor)
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       # 4. Proje bağımlılıklarını sıfırdan yükler
