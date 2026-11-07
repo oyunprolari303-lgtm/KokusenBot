@@ -1,8 +1,42 @@
-# Sideload the APK onto your device
-adb install -r TechnovisAze-Learning-Bot-debug.apk
+name: Build Android APK
 
-# Start the autonomous background learning service directly
-adb shell am start-foreground-service -n com.technovisaze.learningbot/.service.BackgroundLearningService
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
-# Query the local Room SQLite database live
-adb shell run-as com.technovisaze.learningbot sqlite3 databases/technovisaze_learning_bot.db "SELECT game_name, game_version, strategy_category FROM bot_memory;"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Depodakı kodları GitHub Actions serverinə yükləyir
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Java (JDK) mühitini quraşdırır (Proyektinizə uyğun olaraq java-version-u dəyişə bilərsiniz)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      # 3. Gradle icra faylına (gradlew) işləmə icazəsi verir
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 4. APK-nı Gradle vasitəsilə derleyir (Bura yerli Android üçün standart komandadır)
+      # Əgər Flutter istifadə edirsinizsə, bu addımı 'flutter build apk --release' ilə əvəzləməlisiniz
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      # 5. Hazırlanmış APK faylını GitHub interfeysindən yüklənilə bilən hala gətirir
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
