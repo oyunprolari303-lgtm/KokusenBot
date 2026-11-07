@@ -1,0 +1,8 @@
+# Sideload the APK onto your device
+adb install -r TechnovisAze-Learning-Bot-debug.apk
+
+# Start the autonomous background learning service directly
+adb shell am start-foreground-service -n com.technovisaze.learningbot/.service.BackgroundLearningService
+
+# Query the local Room SQLite database live
+adb shell run-as com.technovisaze.learningbot sqlite3 databases/technovisaze_learning_bot.db "SELECT game_name, game_version, strategy_category FROM bot_memory;"
