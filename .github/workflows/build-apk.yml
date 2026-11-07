@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Mobile APK
 
 on:
   push:
@@ -13,35 +13,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Depodaki kodları indirir
+      # 1. Proje kodlarını temiz bir şekilde indirir
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Java (JDK) ortamını kurar
+      # 2. Bun çalışma ortamını kurar
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # 3. Java ortamını hazırlar (Android derleme için zorunlu)
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
 
-      # 3. Eğer gradlew dosyası yoksa otomatik olarak sıfırdan üretir
-      - name: Generate Gradle Wrapper if missing
+      # 4. Proje bağımlılıklarını sıfırdan yükler
+      - name: Install Project Dependencies
+        run: bun install --frozen-lockfile
+
+      # 5. Capacitor mobil araçlarını projeye ekler
+      - name: Install Capacitor
+        run: bun add @capacitor/core @capacitor/cli @capacitor/android
+
+      # 6. Web arayüzünü (Vite çıktılarını) derler
+      - name: Build Web Assets
+        run: bun run build
+
+      # 7. Capacitor Android projesini otomatik başlatır ve yapılandırır
+      - name: Initialize Capacitor Android
         run: |
-          if [ ! -f "gradlew" ]; then
-            echo "gradlew bulunamadı, sıfırdan oluşturuluyor..."
-            gradle wrapper
-          fi
+          bun x cap init KokusenBot com.kokusen.bot --web-dir=dist
+          bun x cap add android
+          bun x cap sync android
 
-      # 4. Gradle resmi aksiyonu ile derlemeyi başlatır ve izinleri otomatik çözer
-      - name: Build Debug APK
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          arguments: assembleDebug
+      # 8. Android klasörünün içine girip hata vermeden doğrudan APK üretir
+      - name: Build Android APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --no-build-cache
 
-      # 5. APK dosyasını çıktı (artifact) olarak teslim eder
+      # 9. Hazırlanan .apk dosyasını GitHub paneline yükler
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: KokusenBot-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
